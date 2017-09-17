@@ -1,0 +1,207 @@
+{% block start_body %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google map fusion tables</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+{% endblock start_body %}
+
+{% block api %}
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCS938OvLrM1AqdNtUhZza1B98GkJaeKjY&callback=initMap">
+    </script>
+{% endblock api %}
+
+{% block display_map %}
+    
+    <div id="map" style="width: 600px; height: 600px;"></div>
+      <script>
+      
+	var labelIndex = 0;
+	var map;
+	var layer;
+	var places=[]
+	
+	/*
+	*  Initialises map funciotns
+	*/
+	function initMap() {
+	  map = new google.maps.Map(document.getElementById('map'), {
+	    zoom: 16,
+	    center: {lat: 51.50083552254009, lng: -0.12462615966796875 }
+	  });
+
+	  var geocoder = new google.maps.Geocoder();
+
+	  // Waits for button click to display and list markers 
+	  document.getElementById('submit').addEventListener('click', function() {
+	    ShowMarkers(places, map);
+	    ListMarkers(places);
+	    
+	  });
+        
+	  map.addListener('click', function(e) {
+	    CollectMarkerAddress(geocoder, e.latLng, map);
+	  });
+	  
+	}
+	
+	/*
+	*  Displays markers on a map from an array
+	*  of valid addresses
+	*/
+	function ShowMarkers(places, map) {
+	  for (var i=0; i<places.length; i++) {
+	    address = places[i]['address']
+	    latLng = places[i]['latLng']
+	    id = places[i]['id']
+	    
+// 	    console.log("["+id+"]:"+address+ "("+latLng.lat()+", "+latLng.lng()+")");
+	    
+	    // Setting marker with latitude and longitude
+	    var marker = new google.maps.Marker({
+	      position: latLng,
+	      map: map
+	    });
+	    map.panTo(latLng);
+		
+	    // Creating label for marker with found address
+	    var infowindow = new google.maps.InfoWindow;
+	    var address = '['+id+'] '+address;
+	    infowindow.setContent(address);
+	    infowindow.open(map, marker);
+	  }
+	}
+	
+	/*
+	*  Is activated on every map clikc and looks for an
+	*  address from Google API. Stores valid addresses
+	*  as JSON in an Array
+	*/ 
+	function CollectMarkerAddress(geocoder, latLng, map) {
+	  labelIndex++;
+	  
+	  // Use Google API to collecting Geocodded 
+	  //  address based in latitude and longitude
+	  geocoder.geocode( {'location': latLng}, function(results, status) {
+	  
+	    // Place markers only for valid addresses,
+	    // BUG: Filter empty places addressed with name of country
+	    //      (e.g open sea= 51.77463825786987, 1.77978515625) 
+	    // 1) Has a post code
+	    // 2) Has Province. Country -> Not valid, less than 3 comma separated 
+	    if (status === 'OK') {
+	      if (results[0]) {
+		// Create an array of places
+		var place = {
+		  'address':results[0].formatted_address,
+		  'latLng' :latLng,
+		  'id':labelIndex}
+		places.push(place)
+	      } 
+	    } 
+	  });
+	}
+	
+	maps.event.addDomListener(window, 'load', initialize);
+
+	/*
+	*  Generates a dynamic list of addresses
+	*  based in places
+	*/
+	function ListMarkers(places) {
+	    // Making region visible
+	    var divList = document.getElementById('list-places');
+	    if (divList.style.display === 'none') {
+		divList.style.display = 'block';
+	    }
+	    
+	    // Removing any alrady existing listed elements 
+	    var placesSpace = document.getElementById("places-space")
+	    if (placesSpace.hasChildNodes()){
+	      var listChildren = placesSpace.children;
+	      if (listChildren.length>0)
+	      {
+		while(placesSpace.firstChild) {
+		  placesSpace.removeChild(placesSpace.firstChild);
+		}
+	      }
+	    }
+	    
+	    // Create List of places
+	    for (var i=0; i<places.length; i++) {
+	      address = places[i]['address']
+	      id = places[i]['id']
+	      latLng = places[i]['latLng']
+	      var line = "["+id+"] "+address
+	      var node = document.createElement("LI");
+	      var textnode = document.createTextNode(line);
+	      node.appendChild(textnode);
+	      	      
+	      // Generate hidden elements for sending to Django views
+	      var inputAddress = document.createElement("input");
+	      inputAddress.type = 'hidden';
+	      inputAddress.value = address;
+	      inputAddress.name = "address"+id
+	      node.appendChild(inputAddress);
+	      
+	      var inputLat = document.createElement("input");
+	      inputLat.type = 'hidden';
+	      inputLat.value = latLng.lat();
+	      inputLat.name = "latitude"+id
+	      node.appendChild(inputLat);
+
+	      var inputLng = document.createElement("input");
+	      inputLng.type = 'hidden';
+	      inputLng.value = latLng.lng();
+	      inputLng.name = "longitude"+id
+	      node.appendChild(inputLng);
+	      
+	      document.getElementById("places-space").appendChild(node);
+	      
+	    }
+	    
+	}
+	
+
+      </script>
+    
+{% endblock display_map %}
+
+{% block list_markers %}
+  
+  <div id="floating-panel" style="text-align:center">
+    <input id="submit" type="submit" value="Show Addresses" style="width: 300px; margin: 0 auto;">
+  </div>  
+  
+  <form action="{% url 'gmap_app:show_map' %}" method="POST">
+    {% csrf_token %}
+    <div id="list-places" style =''>
+      <ul id="places-space">
+      </ul>
+    </div>
+  <input id="submit" type="submit" value="Submit">
+
+  </form>
+{% endblock list_markers %}
+
+{% block end_body %}
+  </body>
+</html>
+{% endblock end_body %}
