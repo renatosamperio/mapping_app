@@ -22,7 +22,7 @@ def address_is_distinct():
   for address in Places.objects.values_list('address', flat=True).distinct():
     Places.objects.filter(pk__in=Places.objects.filter(address=address).values_list('id', flat=True)[1:]).delete()
 
-def show_map(request):
+def store_addresses(request):
     
     ## The first time the page is loaded or whenever is reloaded via browser
     ##   it will remove all items

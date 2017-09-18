@@ -190,7 +190,7 @@
     <input id="submit" type="submit" value="Show Addresses" style="width: 300px; margin: 0 auto;">
   </div>  
   
-  <form action="{% url 'gmap_app:show_map' %}" method="POST">
+  <form action="{% url 'gmap_app:store_addresses' %}" method="POST">
     {% csrf_token %}
     <div id="list-places" style =''>
       <ul id="places-space">
