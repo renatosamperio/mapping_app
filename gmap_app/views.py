@@ -17,12 +17,16 @@ def remove_all_places():
     item.delete()
 
 def address_is_distinct():
+  ''' Looks for duplicates in database and removes them'''
   existing_items = Places.objects.all()
   print(" Removing existing duplicated addresses")
   for address in Places.objects.values_list('address', flat=True).distinct():
     Places.objects.filter(pk__in=Places.objects.filter(address=address).values_list('id', flat=True)[1:]).delete()
 
 def store_addresses(request):
+    ''' 
+    View to get valid google addresses from hidden inputs
+    '''
     
     ## The first time the page is loaded or whenever is reloaded via browser
     ##   it will remove all items
