@@ -6,7 +6,7 @@ To provide a full stack application for choosing and storing addresses from Goog
 Integrate a Django standalone project and application.
 
 ###### Expected Use cases
-![alt text](https://github.com/renatosamperio/mapping_app/blob/master/doc/Use%20Cases.png "Use Cases")
+![alt text](https://github.com/renatosamperio/mapping_app/blob/master/doc/Use%20Cases.png "Use Cases"){ width=75% }
 The main use cases are:
  - Choose locations in Google Map
  - Store locations in DB and Fusion Tables
